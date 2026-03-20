@@ -70,6 +70,7 @@
   <div id="helperText" class="helper-text"></div>
   <div id="options"></div>
 
+  <button onclick="goBack()" id="backButton">Back</button>
   <button onclick="nextStudy()">Save Study &amp; Start New</button>
   <button onclick="exportCSV()">Export All to CSV</button>
 
@@ -97,6 +98,7 @@
 
     let current = 0;
     let currentData = {};
+    let questionHistory = [];
     let dataset = JSON.parse(localStorage.getItem("aiCodingDataset")) || [];
 
     function getNextEligibleIndex(startIndex) {
@@ -112,12 +114,22 @@
     }
 
     function goToNextQuestion() {
+      questionHistory.push(current);
       current = getNextEligibleIndex(current + 1);
       if (current < questions.length) {
         renderQuestion();
       } else {
         showSummary();
       }
+    }
+
+    function goBack() {
+      if (questionHistory.length === 0) {
+        return;
+      }
+
+      current = questionHistory.pop();
+      renderQuestion();
     }
 
     function renderQuestion() {
@@ -137,6 +149,7 @@
       summaryArea.innerHTML = "";
 
       updateProgress();
+      document.getElementById("backButton").disabled = questionHistory.length === 0;
 
       if (q.type === "text") {
         document.getElementById("helperText").innerText = "Enter the response, then click Continue.";
@@ -182,6 +195,7 @@
           const hasYes = Array.isArray(q.options) && q.options.includes("Yes");
           const hasNo = Array.isArray(q.options) && q.options.includes("No");
           if (hasYes && hasNo && opt === "No") {
+            questionHistory.push(current);
             showSummary();
             return;
           }
@@ -205,6 +219,7 @@
       document.getElementById("helperText").innerText = "You can click Save Study & Start New to save this study, or export the accumulated dataset.";
       document.getElementById("options").innerHTML = "";
       document.getElementById("summaryArea").innerHTML = "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
+      document.getElementById("backButton").disabled = questionHistory.length === 0;
     }
 
     function saveCurrentStudy(autoStartNew = false) {
@@ -232,6 +247,7 @@
 
       if (autoStartNew) {
         currentData = {};
+        questionHistory = [];
         current = 0;
         document.getElementById("summaryArea").innerHTML = "";
         renderQuestion();
@@ -241,7 +257,9 @@
         document.getElementById("options").innerHTML = "";
         document.getElementById("summaryArea").innerHTML = "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
         currentData = {};
+        questionHistory = [];
         current = 0;
+        document.getElementById("backButton").disabled = true;
       }
 
       return true;
@@ -274,6 +292,7 @@
     }
 
     renderQuestion();
+    document.getElementById("backButton").disabled = true;
   </script>
 </body>
 </html>
