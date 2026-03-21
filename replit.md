@@ -11,9 +11,9 @@ A research tool for categorizing and recording data about studies involving AI a
 - **Font:** Inter (Google Fonts)
 
 ## Layout
-Split-panel design:
-- **Left sidebar** (dark slate): Study metadata fields (Paper ID, Study ID, Coder Name), progress bar, live answers-so-far list, Save & Export actions
-- **Right main area** (white): Question badge (Q1/N), question text, answer option buttons or text input
+Split-panel design (graduated from V1 – Information Hierarchy mockup):
+- **Left sidebar** (dark slate #0f172a, 300px): Logo, metadata fields (Paper ID, Study ID, Coder Name), Optional Notes textarea, progress timeline showing answered/current/upcoming questions, dataset entry count footer
+- **Right main area** (white): Sticky top bar with Save & Start New / Export CSV buttons; centered question area with question badge, large bold question text, card-style answer option buttons with radio indicators; sticky bottom bar with Back and Continue buttons
 
 ## Project Layout
 ```
