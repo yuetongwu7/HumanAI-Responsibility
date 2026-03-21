@@ -9,5 +9,8 @@ export const modules: ModuleMap = {
   "./components/mockups/coding-tool/RightSidebar.tsx": () => import("../components/mockups/coding-tool/RightSidebar.tsx"),
   "./components/mockups/coding-tool/SplitPanel.tsx": () => import("../components/mockups/coding-tool/SplitPanel.tsx"),
   "./components/mockups/coding-tool/TopNavBar.tsx": () => import("../components/mockups/coding-tool/TopNavBar.tsx"),
-  "./components/mockups/coding-tool/TriColumn.tsx": () => import("../components/mockups/coding-tool/TriColumn.tsx")
+  "./components/mockups/coding-tool/TriColumn.tsx": () => import("../components/mockups/coding-tool/TriColumn.tsx"),
+  "./components/mockups/coding-tool-usability/AccessibilityFirst.tsx": () => import("../components/mockups/coding-tool-usability/AccessibilityFirst.tsx"),
+  "./components/mockups/coding-tool-usability/AffordanceFirst.tsx": () => import("../components/mockups/coding-tool-usability/AffordanceFirst.tsx"),
+  "./components/mockups/coding-tool-usability/HierarchyClear.tsx": () => import("../components/mockups/coding-tool-usability/HierarchyClear.tsx")
 };
