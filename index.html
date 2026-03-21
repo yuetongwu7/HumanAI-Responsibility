@@ -16,13 +16,19 @@
       padding: 8px 12px;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    textarea {
       display: block;
       margin: 8px 0 16px 0;
       padding: 6px;
       width: 100%;
       max-width: 400px;
       box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
     }
 
     .progress-bar {
@@ -49,16 +55,15 @@
       margin-bottom: 10px;
     }
 
-    .button-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
+    .notes-box {
+      margin-top: 20px;
+      max-width: 400px;
     }
 
-    .button-row button {
-      display: inline-block;
-      margin: 0;
+    .notes-help {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 6px;
     }
   </style>
 </head>
@@ -82,10 +87,14 @@
   <div id="helperText" class="helper-text"></div>
   <div id="options"></div>
 
-  <div class="button-row">
-    <button onclick="goBack()" id="backButton">Back</button>
-    <button onclick="nextStudy()">Save Study &amp; Start New</button>
-    <button onclick="exportCSV()">Export All to CSV</button>
+  <button onclick="goBack()" id="backButton">Back</button>
+  <button onclick="nextStudy()">Save Study &amp; Start New</button>
+  <button onclick="exportCSV()">Export All to CSV</button>
+
+  <div class="notes-box">
+    <label for="studyNotes"><strong>Optional Notes:</strong></label>
+    <div class="notes-help">If you have any notes about this study, you can write them here.</div>
+    <textarea id="studyNotes" placeholder="Write optional notes here..."></textarea>
   </div>
 
   <div id="summaryArea"></div>
@@ -115,10 +124,6 @@
     let questionHistory = [];
     let dataset = JSON.parse(localStorage.getItem("aiCodingDataset")) || [];
 
-    function cloneData(data) {
-      return JSON.parse(JSON.stringify(data));
-    }
-
     function getNextEligibleIndex(startIndex) {
       let idx = startIndex;
       while (idx < questions.length) {
@@ -131,17 +136,9 @@
       return idx;
     }
 
-    function saveHistoryState() {
-      questionHistory.push({
-        current,
-        data: cloneData(currentData)
-      });
-    }
-
     function goToNextQuestion() {
-      saveHistoryState();
+      questionHistory.push(current);
       current = getNextEligibleIndex(current + 1);
-
       if (current < questions.length) {
         renderQuestion();
       } else {
@@ -150,11 +147,11 @@
     }
 
     function goBack() {
-      if (questionHistory.length === 0) return;
+      if (questionHistory.length === 0) {
+        return;
+      }
 
-      const previousState = questionHistory.pop();
-      current = previousState.current;
-      currentData = previousState.data;
+      current = questionHistory.pop();
       renderQuestion();
     }
 
@@ -201,10 +198,9 @@
         const btn = document.createElement("button");
         btn.innerText = opt;
         btn.onclick = () => {
-          saveHistoryState();
-
           currentData[q.key] = opt;
 
+          // Skip dependent follow-up item(s) when they do not apply.
           if (q.key === "experimental" && opt !== "Yes") {
             delete currentData.design_type;
           }
@@ -216,20 +212,18 @@
             delete currentData.ai_human_measures;
           }
 
+          // Selecting "No" on any Yes/No-style question jumps straight
+          // to the final review step, where the coder can click
+          // "Save Study & Start New".
           const hasYes = Array.isArray(q.options) && q.options.includes("Yes");
           const hasNo = Array.isArray(q.options) && q.options.includes("No");
-
           if (hasYes && hasNo && opt === "No") {
+            questionHistory.push(current);
             showSummary();
             return;
           }
 
-          current = getNextEligibleIndex(current + 1);
-          if (current < questions.length) {
-            renderQuestion();
-          } else {
-            showSummary();
-          }
+          goToNextQuestion();
         };
         optionsDiv.appendChild(btn);
       });
@@ -244,11 +238,20 @@
 
     function showSummary() {
       updateProgress();
+      const notes = document.getElementById("studyNotes").value.trim();
+
       document.getElementById("questionText").innerText = "Review Current Study Entry";
       document.getElementById("helperText").innerText = "You can click Save Study & Start New to save this study, or export the accumulated dataset.";
       document.getElementById("options").innerHTML = "";
+
+      const summaryData = { ...currentData };
+      if (notes) {
+        summaryData.notes = notes;
+      }
+
       document.getElementById("summaryArea").innerHTML =
-        "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
+        "<div class='summary'>" + JSON.stringify(summaryData, null, 2) + "</div>";
+
       document.getElementById("backButton").disabled = questionHistory.length === 0;
     }
 
@@ -256,6 +259,7 @@
       const paperID = document.getElementById("paperID").value.trim();
       const studyID = document.getElementById("studyID").value.trim();
       const coderName = document.getElementById("coderName").value.trim();
+      const notes = document.getElementById("studyNotes").value.trim();
 
       if (!paperID || !studyID || !coderName) {
         alert("Please enter Paper ID, Study ID, and Coder Name before the questionnaire can end and save.");
@@ -267,18 +271,23 @@
         return false;
       }
 
-      currentData.paper_id = paperID;
-      currentData.study_id = studyID;
-      currentData.coder = coderName;
-      currentData.timestamp = new Date().toISOString();
+      const recordToSave = {
+        ...currentData,
+        paper_id: paperID,
+        study_id: studyID,
+        coder: coderName,
+        notes: notes,
+        timestamp: new Date().toISOString()
+      };
 
-      dataset.push({ ...currentData });
+      dataset.push(recordToSave);
       localStorage.setItem("aiCodingDataset", JSON.stringify(dataset));
 
       if (autoStartNew) {
         currentData = {};
         questionHistory = [];
         current = 0;
+        document.getElementById("studyNotes").value = "";
         document.getElementById("summaryArea").innerHTML = "";
         renderQuestion();
       } else {
@@ -286,10 +295,11 @@
         document.getElementById("helperText").innerText = "This study has been saved. Click 'Save Study & Start New' to begin the next study, or export the dataset.";
         document.getElementById("options").innerHTML = "";
         document.getElementById("summaryArea").innerHTML =
-          "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
+          "<div class='summary'>" + JSON.stringify(recordToSave, null, 2) + "</div>";
         currentData = {};
         questionHistory = [];
         current = 0;
+        document.getElementById("studyNotes").value = "";
         document.getElementById("backButton").disabled = true;
       }
 
