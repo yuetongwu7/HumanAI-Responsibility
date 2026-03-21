@@ -1,298 +1,311 @@
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AI vs Human Attribution Coding Tool</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-          }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI vs Human Attribution Coding Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
 
-          button {
-            display: block;
-            margin: 8px 0;
-            padding: 8px 12px;
-          }
+    button {
+      display: block;
+      margin: 8px 0;
+      padding: 8px 12px;
+    }
 
-          input[type="text"] {
-            display: block;
-            margin: 8px 0 16px 0;
-            padding: 6px;
-            width: 100%;
-            max-width: 400px;
-            box-sizing: border-box;
-          }
+    input[type="text"] {
+      display: block;
+      margin: 8px 0 16px 0;
+      padding: 6px;
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
 
-          .progress-bar {
-            width: 100%;
-            max-width: 400px;
-            height: 8px;
-            background: #ddd;
-            margin: 12px 0;
-          }
+    .progress-bar {
+      width: 100%;
+      max-width: 400px;
+      height: 8px;
+      background: #ddd;
+      margin: 12px 0;
+    }
 
-          .progress {
-            height: 8px;
-            background: #666;
-            width: 0%;
-          }
+    .progress {
+      height: 8px;
+      background: #666;
+      width: 0%;
+    }
 
-          .summary {
-            margin-top: 16px;
-            white-space: pre-line;
-            font-family: monospace;
-          }
+    .summary {
+      margin-top: 16px;
+      white-space: pre-line;
+      font-family: monospace;
+    }
 
-          .helper-text {
-            margin-bottom: 10px;
-          }
-        </style>
-      </head>
-      <body>
-        <h2>AI vs Human Attribution Coding Tool</h2>
+    .helper-text {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>AI vs Human Attribution Coding Tool</h2>
 
-        <label><strong>Paper ID:</strong></label>
-        <input type="text" id="paperID" placeholder="1234">
+  <label><strong>Paper ID:</strong></label>
+  <input type="text" id="paperID" placeholder="1234">
 
-        <label><strong>Study ID:</strong></label>
-        <input type="text" id="studyID" placeholder="e.g., Smith_2024_Study1">
+  <label><strong>Study ID:</strong></label>
+  <input type="text" id="studyID" placeholder="e.g., Smith_2024_Study1">
 
-        <label><strong>Coder Name:</strong></label>
-        <input type="text" id="coderName" placeholder="Your name">
+  <label><strong>Coder Name:</strong></label>
+  <input type="text" id="coderName" placeholder="Your name">
 
-        <div class="progress-bar">
-          <div class="progress" id="progress"></div>
-        </div>
+  <div class="progress-bar">
+    <div class="progress" id="progress"></div>
+  </div>
 
-        <h3 id="questionText"></h3>
-        <div id="helperText" class="helper-text"></div>
-        <div id="options"></div>
+  <h3 id="questionText"></h3>
+  <div id="helperText" class="helper-text"></div>
+  <div id="options"></div>
 
-        <button onclick="goBack()" id="backButton">Back</button>
-        <button onclick="nextStudy()">Save Study &amp; Start New</button>
-        <button onclick="exportCSV()">Export All to CSV</button>
+  <button onclick="goBack()" id="backButton">Back</button>
+  <button onclick="nextStudy()">Save Study &amp; Start New</button>
+  <button onclick="exportCSV()">Export All to CSV</button>
 
-        <div id="summaryArea"></div>
+  <div id="summaryArea"></div>
 
-        <script>
-          const YES_NO_UNSURE = ["Yes", "No", "Unsure"];
+  <script>
+    const YES_NO_UNSURE = ["Yes", "No", "Unsure"];
 
-          const questions = [
-            { key: "primary_quantitative", text: "Is this a primary quantitative study?", options: YES_NO_UNSURE },
-            { key: "experimental", text: "Is this an experimental study?", options: YES_NO_UNSURE },
-            { key: "design_type", text: "If experimental, what design?", options: ["Within", "Between", "Not Applicable"], showIf: (data) => data.experimental === "Yes" },
-            { key: "failure_present", text: "Is there a failure or negative consequence depicted?", options: YES_NO_UNSURE },
-            { key: "ai_human_comparison_possible", text: "Does the scenario involve potential AI vs Human comparison as contributing to failure or negative consequence?", options: YES_NO_UNSURE },
-            {
-              key: "error_type",
-              text: "Error type:",
-              options: ["Only_Humans", "Only_AI", "Both", "Different_Consequences", "Not_Applicable"],
-              showIf: (data) => data.ai_human_comparison_possible === "Yes"
-            },
-            { key: "attribution_measure", text: "Is there an attribution outcome measure?", options: YES_NO_UNSURE },
-            { key: "DV_name", text: "Enter DV name exactly as written:", type: "text", showIf: (data) => data.attribution_measure === "Yes" },
-            { key: "ai_human_measures", text: "Are there measures directly comparing AI vs Human?", options: YES_NO_UNSURE, showIf: (data) => data.ai_human_comparison_possible === "Yes" }
-          ];
+    const questions = [
+      { key: "primary_quantitative", text: "Is this a primary quantitative study?", options: YES_NO_UNSURE },
+      { key: "experimental", text: "Is this an experimental study?", options: YES_NO_UNSURE },
+      { key: "design_type", text: "If experimental, what design?", options: ["Within", "Between", "Not Applicable"], showIf: (data) => data.experimental === "Yes" },
+      { key: "failure_present", text: "Is there a failure or negative consequence depicted?", options: YES_NO_UNSURE },
+      { key: "ai_human_comparison_possible", text: "Does the scenario involve potential AI vs Human comparison as contributing to failure or negative consequence?", options: YES_NO_UNSURE },
+      {
+        key: "error_type",
+        text: "Error type:",
+        options: ["Only_Humans", "Only_AI", "Both", "Different_Consequences", "Not_Applicable"],
+        showIf: (data) => data.ai_human_comparison_possible === "Yes"
+      },
+      { key: "attribution_measure", text: "Is there an attribution outcome measure?", options: YES_NO_UNSURE },
+      { key: "DV_name", text: "Enter DV name exactly as written:", type: "text", showIf: (data) => data.attribution_measure === "Yes" },
+      { key: "ai_human_measures", text: "Are there measures directly comparing AI vs Human?", options: YES_NO_UNSURE, showIf: (data) => data.ai_human_comparison_possible === "Yes" },
+      { key: "final_notes", text: "Optional notes", type: "text_optional" }
+    ];
 
-          let current = 0;
-          let currentData = {};
-          let questionHistory = [];
-          let dataset = JSON.parse(localStorage.getItem("aiCodingDataset")) || [];
+    let current = 0;
+    let currentData = {};
+    let questionHistory = [];
+    let dataset = JSON.parse(localStorage.getItem("aiCodingDataset")) || [];
 
-          function getNextEligibleIndex(startIndex) {
-            let idx = startIndex;
-            while (idx < questions.length) {
-              const q = questions[idx];
-              if (!q.showIf || q.showIf(currentData)) {
-                return idx;
-              }
-              idx++;
+    function getNextEligibleIndex(startIndex) {
+      let idx = startIndex;
+      while (idx < questions.length) {
+        const q = questions[idx];
+        if (!q.showIf || q.showIf(currentData)) {
+          return idx;
+        }
+        idx++;
+      }
+      return idx;
+    }
+
+    function goToNextQuestion() {
+      questionHistory.push(current);
+      current = getNextEligibleIndex(current + 1);
+      if (current < questions.length) {
+        renderQuestion();
+      } else {
+        showSummary();
+      }
+    }
+
+    function goBack() {
+      if (questionHistory.length === 0) {
+        return;
+      }
+
+      current = questionHistory.pop();
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      current = getNextEligibleIndex(current);
+
+      if (current >= questions.length) {
+        showSummary();
+        return;
+      }
+
+      const q = questions[current];
+      document.getElementById("questionText").innerText = q.text;
+      document.getElementById("helperText").innerText = "";
+      const optionsDiv = document.getElementById("options");
+      const summaryArea = document.getElementById("summaryArea");
+      optionsDiv.innerHTML = "";
+      summaryArea.innerHTML = "";
+
+      updateProgress();
+      document.getElementById("backButton").disabled = questionHistory.length === 0;
+
+      if (q.type === "text" || q.type === "text_optional") {
+        document.getElementById("helperText").innerText = q.type === "text_optional"
+          ? "Optional: add any notes here, or leave it blank and click Continue."
+          : "Enter the response, then click Continue.";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentData[q.key] || "";
+        input.placeholder = q.type === "text_optional" ? "Optional notes" : "Type here";
+
+        const saveBtn = document.createElement("button");
+        saveBtn.innerText = "Continue";
+        saveBtn.onclick = () => {
+          const value = input.value.trim();
+          if (q.type === "text_optional") {
+            if (value) {
+              currentData[q.key] = value;
+            } else {
+              delete currentData[q.key];
             }
-            return idx;
+          } else {
+            currentData[q.key] = value;
+          }
+          goToNextQuestion();
+        };
+
+        optionsDiv.appendChild(input);
+        optionsDiv.appendChild(saveBtn);
+        return;
+      }
+
+      q.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.onclick = () => {
+          currentData[q.key] = opt;
+
+          // Skip dependent follow-up item(s) when they do not apply.
+          if (q.key === "experimental" && opt !== "Yes") {
+            delete currentData.design_type;
+          }
+          if (q.key === "attribution_measure" && opt !== "Yes") {
+            delete currentData.DV_name;
+          }
+          if (q.key === "ai_human_comparison_possible" && opt !== "Yes") {
+            delete currentData.error_type;
+            delete currentData.ai_human_measures;
           }
 
-          function goToNextQuestion() {
+          // Selecting "No" on any Yes/No-style question jumps to the
+          // optional final notes question first, then the summary screen.
+          const hasYes = Array.isArray(q.options) && q.options.includes("Yes");
+          const hasNo = Array.isArray(q.options) && q.options.includes("No");
+          if (hasYes && hasNo && opt === "No") {
+            delete currentData.final_notes;
             questionHistory.push(current);
-            current = getNextEligibleIndex(current + 1);
-            if (current < questions.length) {
-              renderQuestion();
-            } else {
-              showSummary();
-            }
-          }
-
-          function goBack() {
-            if (questionHistory.length === 0) {
-              return;
-            }
-
-            current = questionHistory.pop();
+            current = questions.findIndex(question => question.key === "final_notes");
             renderQuestion();
+            return;
           }
 
-          function renderQuestion() {
-            current = getNextEligibleIndex(current);
+          goToNextQuestion();
+        };
+        optionsDiv.appendChild(btn);
+      });
+    }
 
-            if (current >= questions.length) {
-              showSummary();
-              return;
-            }
+    function updateProgress() {
+      const visibleQuestions = questions.filter(q => !q.showIf || q.showIf(currentData));
+      const answeredVisible = visibleQuestions.filter(q => currentData[q.key] !== undefined && currentData[q.key] !== "").length;
+      const percent = visibleQuestions.length ? (answeredVisible / visibleQuestions.length) * 100 : 0;
+      document.getElementById("progress").style.width = percent + "%";
+    }
 
-            const q = questions[current];
-            document.getElementById("questionText").innerText = q.text;
-            document.getElementById("helperText").innerText = "";
-            const optionsDiv = document.getElementById("options");
-            const summaryArea = document.getElementById("summaryArea");
-            optionsDiv.innerHTML = "";
-            summaryArea.innerHTML = "";
+    function showSummary() {
+      updateProgress();
+      document.getElementById("questionText").innerText = "Review Current Study Entry";
+      document.getElementById("helperText").innerText = "You can click Save Study & Start New to save this study, or export the accumulated dataset.";
+      document.getElementById("options").innerHTML = "";
+      document.getElementById("summaryArea").innerHTML = "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
+      document.getElementById("backButton").disabled = questionHistory.length === 0;
+    }
 
-            updateProgress();
-            document.getElementById("backButton").disabled = questionHistory.length === 0;
+    function saveCurrentStudy(autoStartNew = false) {
+      const paperID = document.getElementById("paperID").value.trim();
+      const studyID = document.getElementById("studyID").value.trim();
+      const coderName = document.getElementById("coderName").value.trim();
 
-            if (q.type === "text") {
-              document.getElementById("helperText").innerText = "Enter the response, then click Continue.";
+      if (!paperID || !studyID || !coderName) {
+        alert("Please enter Paper ID, Study ID, and Coder Name before the questionnaire can end and save.");
+        return false;
+      }
 
-              const input = document.createElement("input");
-              input.type = "text";
-              input.value = currentData[q.key] || "";
-              input.placeholder = "Type here";
+      if (Object.keys(currentData).length === 0) {
+        alert("Please complete at least one question before saving.");
+        return false;
+      }
 
-              const saveBtn = document.createElement("button");
-              saveBtn.innerText = "Continue";
-              saveBtn.onclick = () => {
-                currentData[q.key] = input.value.trim();
-                goToNextQuestion();
-              };
+      currentData.paper_id = paperID;
+      currentData.study_id = studyID;
+      currentData.coder = coderName;
+      currentData.timestamp = new Date().toISOString();
 
-              optionsDiv.appendChild(input);
-              optionsDiv.appendChild(saveBtn);
-              return;
-            }
+      dataset.push({ ...currentData });
+      localStorage.setItem("aiCodingDataset", JSON.stringify(dataset));
 
-            q.options.forEach(opt => {
-              const btn = document.createElement("button");
-              btn.innerText = opt;
-              btn.onclick = () => {
-                currentData[q.key] = opt;
+      if (autoStartNew) {
+        currentData = {};
+        questionHistory = [];
+        current = 0;
+        document.getElementById("summaryArea").innerHTML = "";
+        renderQuestion();
+      } else {
+        document.getElementById("questionText").innerText = "Study saved";
+        document.getElementById("helperText").innerText = "This study has been saved. Click 'Save Study & Start New' to begin the next study, or export the dataset.";
+        document.getElementById("options").innerHTML = "";
+        document.getElementById("summaryArea").innerHTML = "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
+        currentData = {};
+        questionHistory = [];
+        current = 0;
+        document.getElementById("backButton").disabled = true;
+      }
 
-                // Skip dependent follow-up item(s) when they do not apply.
-                if (q.key === "experimental" && opt !== "Yes") {
-                  delete currentData.design_type;
-                }
-                if (q.key === "attribution_measure" && opt !== "Yes") {
-                  delete currentData.DV_name;
-                }
-                if (q.key === "ai_human_comparison_possible" && opt !== "Yes") {
-                  delete currentData.error_type;
-                  delete currentData.ai_human_measures;
-                }
+      return true;
+    }
 
-                // Selecting "No" on any Yes/No-style question jumps straight
-                // to the final review step, where the coder can click
-                // "Save Study & Start New".
-                const hasYes = Array.isArray(q.options) && q.options.includes("Yes");
-                const hasNo = Array.isArray(q.options) && q.options.includes("No");
-                if (hasYes && hasNo && opt === "No") {
-                  questionHistory.push(current);
-                  showSummary();
-                  return;
-                }
+    function nextStudy() {
+      saveCurrentStudy(true);
+    }
 
-                goToNextQuestion();
-              };
-              optionsDiv.appendChild(btn);
-            });
-          }
+    function exportCSV() {
+      dataset = JSON.parse(localStorage.getItem("aiCodingDataset")) || [];
 
-          function updateProgress() {
-            const visibleQuestions = questions.filter(q => !q.showIf || q.showIf(currentData));
-            const answeredVisible = visibleQuestions.filter(q => currentData[q.key] !== undefined && currentData[q.key] !== "").length;
-            const percent = visibleQuestions.length ? (answeredVisible / visibleQuestions.length) * 100 : 0;
-            document.getElementById("progress").style.width = percent + "%";
-          }
+      if (dataset.length === 0) {
+        alert("No data to export.");
+        return;
+      }
 
-          function showSummary() {
-            updateProgress();
-            document.getElementById("questionText").innerText = "Review Current Study Entry";
-            document.getElementById("helperText").innerText = "You can click Save Study & Start New to save this study, or export the accumulated dataset.";
-            document.getElementById("options").innerHTML = "";
-            document.getElementById("summaryArea").innerHTML = "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
-            document.getElementById("backButton").disabled = questionHistory.length === 0;
-          }
+      const headers = [...new Set(dataset.flatMap(row => Object.keys(row)))];
+      let csv = headers.join(",") + "\n";
 
-          function saveCurrentStudy(autoStartNew = false) {
-            const paperID = document.getElementById("paperID").value.trim();
-            const studyID = document.getElementById("studyID").value.trim();
-            const coderName = document.getElementById("coderName").value.trim();
+      dataset.forEach(row => {
+        csv += headers.map(h => `"${String(row[h] ?? "").replace(/"/g, '""')}"`).join(",") + "\n";
+      });
 
-            if (!paperID || !studyID || !coderName) {
-              alert("Please enter Paper ID, Study ID, and Coder Name before the questionnaire can end and save.");
-              return false;
-            }
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "AI_Human_Coding_Dataset.csv";
+      link.click();
+    }
 
-            if (Object.keys(currentData).length === 0) {
-              alert("Please complete at least one question before saving.");
-              return false;
-            }
-
-            currentData.paper_id = paperID;
-            currentData.study_id = studyID;
-            currentData.coder = coderName;
-            currentData.timestamp = new Date().toISOString();
-
-            dataset.push({ ...currentData });
-            localStorage.setItem("aiCodingDataset", JSON.stringify(dataset));
-
-            if (autoStartNew) {
-              currentData = {};
-              questionHistory = [];
-              current = 0;
-              document.getElementById("summaryArea").innerHTML = "";
-              renderQuestion();
-            } else {
-              document.getElementById("questionText").innerText = "Study saved";
-              document.getElementById("helperText").innerText = "This study has been saved. Click 'Save Study & Start New' to begin the next study, or export the dataset.";
-              document.getElementById("options").innerHTML = "";
-              document.getElementById("summaryArea").innerHTML = "<div class='summary'>" + JSON.stringify(currentData, null, 2) + "</div>";
-              currentData = {};
-              questionHistory = [];
-              current = 0;
-              document.getElementById("backButton").disabled = true;
-            }
-
-            return true;
-          }
-
-          function nextStudy() {
-            saveCurrentStudy(true);
-          }
-
-          function exportCSV() {
-            dataset = JSON.parse(localStorage.getItem("aiCodingDataset")) || [];
-
-            if (dataset.length === 0) {
-              alert("No data to export.");
-              return;
-            }
-
-            const headers = [...new Set(dataset.flatMap(row => Object.keys(row)))];
-            let csv = headers.join(",") + "\n";
-
-            dataset.forEach(row => {
-              csv += headers.map(h => `"${String(row[h] ?? "").replace(/"/g, '""')}"`).join(",") + "\n";
-            });
-
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "AI_Human_Coding_Dataset.csv";
-            link.click();
-          }
-
-          renderQuestion();
-          document.getElementById("backButton").disabled = true;
-        </script>
-      </body>
-      </html>
+    renderQuestion();
+    document.getElementById("backButton").disabled = true;
+  </script>
+</body>
+</html>
